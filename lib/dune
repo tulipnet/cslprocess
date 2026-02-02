@@ -1,0 +1,11 @@
+(ocamllex
+ (modules lexer))
+
+(ocamlyacc
+ (modules parser))
+
+(library
+ (name cslprocess_v2)
+ (public_name cslprocess_v2)
+ (flags (:standard -w -27 -w -32 -w -33))
+ (libraries str unix))

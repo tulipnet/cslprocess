@@ -1,0 +1,3 @@
+(install
+ (files (syscall_monitor_ml_footer.res as resources/syscall_monitor_ml_footer.res))
+ (section share))

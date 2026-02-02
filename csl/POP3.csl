@@ -1,0 +1,49 @@
+case_sensitivity = no;
+arg_separator = ' ' multiple;
+initial_level = authorization;
+other_commands = yes;
+adversarial_sequences_generation_mode = minimal;
+ignored_chars = '\r';
+
+levels:
+  level authorization:
+    USER (arg == "milhouse" => level = authorization_login_milhouse | _ => level = authorization important),
+    NOOP (arg == "toto"),
+    QUIT (_);
+
+  level authorization_login_milhouse:
+    PASS (arg == "lisa" => level = transaction | _ => level = authorization important),
+    APOP (_ => level = authorization),
+    USER (arg == "milhouse" => level = authorization_login_milhouse | _ => level = authorization),
+    NOOP (_),
+    QUIT (_);
+
+  level transaction:
+    STAT,
+    LIST (arg == "1" important),
+    RETR (arg == "1"),
+    DELE (arg == "1"),
+    NOOP (arg == "1"),
+    RSET,
+    QUIT (_);
+
+  level update:
+    QUIT (_);
+
+syscall_monitor:
+  accepted:
+    write(1, "+OK .*", ".*");
+
+  refused:
+    write(1, "Error: Unknown command", ".*"),
+    write(1, "Unauthorized", ".*"),
+    write(1, "-ERR.*", ".*");
+
+  ignored:
+    write(1, "+OK <.*", ".*");
+
+  authorized_syscalls:
+    USER(read, write, kill, pselect6, brk, close, getegid, geteuid, getgid, getpid, getppid, getrandom, getuid, mmap, mprotect, munmap, newfstatat, openat, pread64, prlimit64, rseq, fcntl, pipe2, clone, wait4, access, socket, connect, lseek, execve, futex, readlinkat),
+    PASS(read, write, kill, fcntl, clone, close, pipe2, wait4, pselect6, execve, brk, mmap, openat, fstat, pread64, rseq, mprotect, prlimit64, munmap, newfstat, newfstatat, chdir, getrandom, getdents64, access, socket, connect, lseek, futex, readlinkat),
+    NOOP(exit, kill, pselect6, write),
+    other_commands(kill, pselect6, fcntl, getrandom);

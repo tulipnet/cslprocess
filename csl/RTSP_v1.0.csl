@@ -1,0 +1,46 @@
+adversarial_sequences_ending = "\r\n";
+initial_level = methods;
+
+levels:
+  level methods: // Section 6.1 of the RFC 2326
+    DESCRIBE (_ => level = headers) "RTSP/1.0",
+    ANNOUNCE (_ => level = headers) "RTSP/1.0",
+    GET_PARAMETER (_ => level = headers) "RTSP/1.0",
+    OPTIONS (_ => level = headers) "RTSP/1.0",
+    PAUSE (_ => level = headers) "RTSP/1.0",
+    PLAY (_ => level = headers) "RTSP/1.0",
+    RECORD (_ => level = headers) "RTSP/1.0",
+    REDIRECT (_ => level = headers) "RTSP/1.0",
+    SETUP (_ => level = headers) "RTSP/1.0",
+    SET_PARAMETER (_ => level = headers) "RTSP/1.0",
+    TEARDOWN (_ => level = headers) "RTSP/1.0";
+
+  level headers: // Sections 5 and 6.2 of the RFC 2326
+    "Accept:" (_ => level = headers),
+    "Accept-Encoding:" (_ => level = headers),
+    "Accept-Language:" (_ => level = headers),
+    "Authorization:" (_ => level = headers),
+    "From:" (_ => level = headers),
+    "If-Modified-Source" (_ => level = headers),
+    "Range" (_ => level = headers),
+    "Refer" (_ => level = headers),
+    "User-Agent:" (_ => level = headers),
+    "Cache-Control:" (_ => level = headers),
+    "Connection:" (_ => level = headers),
+    "Date:" (_ => level = headers),
+    "Via:" (_ => level = headers);
+
+syscall_monitor:
+  accepted:
+    write(1, "RTSP/1.0 2.*", ".*");
+
+  refused:
+    write(1, "RTSP/1.0 4.*", ".*"),
+    write(1, "RTSP/1.0 5.*", ".*");
+
+  ignored:
+    write(1, "RTSP/1.0 1.*", ".*"), // 1xx responses are just informative or debug messages, according to the section 7.1.1 of the RFC 2326
+    write(1, "RTSP/1.0 3.*", ".*"); // 3xx responses are redirections, according to the section 7.1.1 of the RFC 2326. Further commands have to be sent to continue the process.
+
+  authorized_syscalls:
+    other_commands(write, kill, ioctl);

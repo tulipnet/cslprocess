@@ -1,0 +1,92 @@
+case_sensitivity = no;
+arg_separator = ' ' | '\t' | '"' multiple;
+initial_level = authentication;
+ignore_empty_commands = yes;
+adversarial_sequences_generation_mode = minimal;
+ignored_chars = '"';
+other_commands = no;
+
+levels:
+  level authentication:
+    USER (arg == "milhouse" => level = authentication_milhouse | _ => level = authentication important),
+    NOOP (_ important),
+    FEAT (_ important),
+    SYST (_ important),
+    TYPE (_ important),
+    HELP (_ important),
+    SITE help,
+    QUIT (_ important);
+
+  level authentication_milhouse:
+    PASS (arg == "lisa" => level = authenticated_milhouse | _ => level = authentication important),
+    USER (arg == "milhouse" => level = authentication_milhouse | _ => level = authentication),
+    NOOP (_),
+    FEAT (_),
+    SYST (_),
+    TYPE (_),
+    HELP (_),
+    SITE help,
+    QUIT (_);
+
+  level authenticated_milhouse:
+    CWD (_),
+    CDUP,
+    SMNT (_),
+    QUIT (_),
+    REIN,
+    PORT (_),
+    PASV,
+    TYPE (_),
+    STRU (_),
+    MODE (_),
+    RETR (_),
+    STOR (_),
+    STOU (_),
+    APPE (_),
+    ALLO (_),
+    REST (_),
+    RNFR (_),
+    RNTO (_),
+    ABOR,
+    DELE (_),
+    RMD (_),
+    MKD (_),
+    PWD,
+    LIST (_),
+    NLST (_),
+    SYST (_),
+    STAT (_),
+    HELP (_),
+    FEAT (_),
+    SITE help,
+    SITE cpfr (arg == "/bin/cat" => level = authenticated_milhouse important),
+    SITE cpto (arg == "/tmp/cat" => level = authenticated_milhouse important),
+    NOOP (_);
+
+syscall_monitor:
+  accepted:
+    write(1, "1.*", ".*"),
+    write(1, "2.*", ".*"),
+    write(1, "3.*", ".*");
+
+  refused:
+    write(1, "5.*", ".*"),
+    write(1, "331 Password required for .*", ".*"),
+    write(2, ".*client sent too-long command.*", ".*");
+
+  ignored:
+    write(1, "220 (vsFTPd .*", ".*"),
+    write(1, "vsf.*", ".*"),
+    write(1, "\\r\\n", ".*"),
+    write(1, "211-Features.*", ".*"), // For FEAT
+    write(1, " .*", ".*"), // For FEAT and HELP
+    write(1, "214-HELP.*", ".*"), // For HELP
+    write(1, "214 CHMOD.*", ".*"), // For HELP
+    write(1, "220 ProFTPD.*", ".*"),
+    write(1, "214 Direct comments to .*", ".*"); // For HELP
+
+  authorized_syscalls:
+    USER(kill, write, close, mmap, fcntl, munmap, pselect6, pipe2, getpid, brk, openat, newfstatat, readlink, lseek, mprotect, futex, readlinkat, gettid, ioctl, socket, connect, setresuid, setresgid),
+    PASS(kill, write, fcntl, socket, close, newfstatat, openat, lseek, mmap, mprotect, munmap, futex, readlinkat, getcwd, umask, statfs, getuid, geteuid, bind, getsockname, sendto, recvmsg, readlink, poll, recvfrom, pselect6, pipe2, getpid, connect, access, ioctl, socket, connect, brk, gettid),
+    FEAT(newfstat, pselect6, write, newfstatat, brk, pipe2, getpid, kill, fcntl, openat, close, mmap, munmap, readlink, lseek, ioctl, socket, connect, mprotect, futex, readlinkat, gettid),
+    other_commands(read, kill, pselect6, brk, newfstatat, lseek, close, pipe2, getpid, openat, write, ioctl);

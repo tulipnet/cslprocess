@@ -1,0 +1,5 @@
+(executable
+ (name cslprocess)
+ (public_name cslprocess)
+ (flags (:standard -w -27 -w -32 -w -33))
+ (libraries cslprocess_v2))

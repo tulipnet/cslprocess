@@ -1,0 +1,12 @@
+initial_level = low; 
+
+levels:
+level low:
+    user (arg == "homer" => level = medium | _);
+
+level medium:
+    pass (arg == "marge" => level = high | _ => level = low),
+    user (arg == "homer" => level = medium | _ => level = low);
+
+level high:
+    list (_ => level = low);

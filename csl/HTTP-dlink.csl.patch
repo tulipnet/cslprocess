@@ -1,0 +1,10 @@
+--- HTTP-dlink.csl	2026-02-02 13:53:47.798120437 +0100
++++ HTTP.csl	2026-02-02 13:53:47.798110722 +0100
+@@ -5,6 +5,7 @@
+ ignored_chars = '"';
+ other_commands = yes;
+ adversarial_sequences_generation_mode = minimal;
++adversarial_sequences_ending = "\r\n";
+ syscalls_getting_mode = one_shot;
+ 
+ levels:

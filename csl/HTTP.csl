@@ -1,0 +1,50 @@
+case_sensitivity = no;
+arg_separator = ' ' multiple;
+initial_level = http_method;
+ignore_empty_commands = yes;
+ignored_chars = '"';
+other_commands = yes;
+adversarial_sequences_generation_mode = minimal;
+adversarial_sequences_ending = "\r\n";
+syscalls_getting_mode = one_shot;
+
+levels:
+  level http_method:
+    GET (arg == "/public/public_page.html" => level = headers | _) "HTTP/1.1",
+    POST (_ => level = headers) "HTTP/1.1",
+    PUT (_ => level = headers) "HTTP/1.1",
+    PATCH (_ => level = headers) "HTTP/1.1";
+
+  level headers:
+    "Host:" (arg == "localhost:8080" => level = headers important) "HTTP/1.1",
+    "User-agent:" (_ important),
+    "Accept:" (arg == "*/*" => level = headers),
+    "Content-Type:" (arg == "image/jpeg" => level = headers),
+    "Content-Length:" (_);
+
+  level administrator:
+    GET (arg == "/index.html" => level = headers_administrator important | arg == "/" => level = headers_administrator important | _) "HTTP/1.1",
+    POST (_ => level = headers_administrator) "HTTP/1.1",
+    PUT (_ => level = headers_administrator) "HTTP/1.1",
+    PATCH (_ => level = headers_administrator) "HTTP/1.1";
+
+  level headers_administrator:
+    "Host:" (arg == "localhost:8080" => level = headers_administrator) "HTTP/1.1",
+    "User-agent:" (_ important),
+    "Accept:" (arg == "*/*" => level = headers_administrator),
+    "Content-Type:" (arg == "image/jpeg" => level = headers_administrator),
+    "Content-Length:" (_);
+
+syscall_monitor:
+  accepted:
+    writev(".*", ".*", ".*");
+
+  refused:
+    write(0, "UNKNOWN 4.*", ".*"),
+    write(0, "HTTP/1.1 4.*", ".*");
+
+  authorized_syscalls:
+    get(kill, poll, getpid, socket, close, fcntl, openat, newfstatat, lseek, getrandom, mknodat, mmap, clone3, clone, ioctl, write, munmap, brk, pread64, mprotect, rseq, prlimit64, getuid, getgid, geteuid, getppid, access, statfs, getegid, connect, getgroups, shutdown, pselect6, setitimer, getcwd, pipe2, chdir, dup2, sendto, readlink, madvise, writev, mremap, getpriority, setpriority, getdents64, gettid, tgkill),
+    "host:"(kill, fcntl, poll, getpid, socket, close, openat, newfstatat, lseek, write, ioctl, shutdown, pselect6, connect, setitimer, tgkill, getcwd, chdir),
+    "user-agent:"(kill, fcntl, poll, getpid, socket, close, openat, newfstatat, lseek, write, shutdown, ioctl, connect, pselect6, tgkill, getcwd, setitimer),
+    other_commands(kill, fcntl, poll, getpid, socket, close, write, setitimer, ioctl, newfstatat, openat, pselect6, readlink, tgkill);

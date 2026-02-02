@@ -1,0 +1,3 @@
+exception SyntaxError of string
+exception LevelNotFound of string
+exception NoDeclaredSyscalls

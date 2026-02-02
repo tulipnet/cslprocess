@@ -1,0 +1,62 @@
+case_sensitivity = no;
+arg_separator = ' ' multiple;
+initial_level = not_authenticated;
+other_commands = no;
+adversarial_sequences_generation_mode = minimal;
+commands_prefix = "A ";
+split_adversarial_sequences_args = yes;
+
+levels:
+  level not_authenticated:
+    CAPABILITY,
+    NOOP,
+    LOGOUT,
+    STARTTLS,
+    LOGIN (arg == "milhouse lisa" => level = authenticated | _);
+
+  level authenticated:
+    CAPABILITY,
+    NOOP,
+    LOGOUT,
+    SELECT (_),
+    EXAMINE (_),
+    CREATE (_),
+    DELETE (_),
+    RENAME (_),
+    SUBSCRIBE (_),
+    UNSUBSCRIBE (_),
+    LIST (_),
+    LSUB (_),
+    STATUS (_),
+    APPEND (_),
+    GETMETADATA (_),
+    SETMETADATA (_);
+
+  level selected:
+    CAPABILITY,
+    NOOP,
+    LOGOUT,
+    CHECK,
+    CLOSE (_ => level = authenticated),
+    EXPUNGE,
+    SEARCH (_),
+    FETCH (_),
+    STORE (_),
+    COPY (_),
+    UID (_),
+    GETMETADATA (_),
+    SETMETADATA (_);
+
+syscall_monitor:
+  accepted:
+    write(1, ".*A OK.*", ".*");
+
+  refused:
+    write(1, "A NO.*", ".*");
+
+  ignored:
+    write(1, "\\* OK \\\[CAPABILITY.*", ".*");
+
+  authorized_syscalls:
+    LOGIN(kill, openat, newfstatat, write, close, rename, futex, socket, lseek, getpid, pselect6, readlinkat, unlink, munmap, connect, ioctl, shutdown),
+    other_commands(kill, ioctl);
